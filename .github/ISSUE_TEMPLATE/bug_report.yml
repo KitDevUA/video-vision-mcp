@@ -1,0 +1,71 @@
+name: Bug report
+description: Something doesn't work as expected
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: Thanks for reporting. Please fill in the fields so the issue is reproducible.
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened
+      description: What did you do, what did you expect, what happened instead?
+      placeholder: I called analyze_video on ... and got ...
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. ...
+        2. ...
+    validations:
+      required: true
+  - type: dropdown
+    id: backend
+    attributes:
+      label: Backend tier in use
+      options:
+        - tier1-local (whisper.cpp)
+        - tier2-openai
+        - tier2-groq
+        - tier3-gemini
+        - not sure
+    validations:
+      required: true
+  - type: dropdown
+    id: source
+    attributes:
+      label: Input source
+      options:
+        - file_path
+        - url
+        - jira_issue_key
+    validations:
+      required: true
+  - type: input
+    id: os
+    attributes:
+      label: OS
+      placeholder: macOS 15 / Ubuntu 24.04 / Windows 11
+    validations:
+      required: true
+  - type: input
+    id: python
+    attributes:
+      label: Python version
+      placeholder: "3.12"
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: video-vision-mcp version / commit
+      placeholder: 0.1.0 or git SHA
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs / error output
+      description: Paste the server stderr or the error message. Redact any API keys.
+      render: shell

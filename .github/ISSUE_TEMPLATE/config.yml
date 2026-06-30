@@ -1,0 +1,5 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Question / usage help
+    url: https://github.com/KitDevUA/video-vision-mcp#readme
+    about: Check the README first — install, configuration, and the tool list are there.
