@@ -1,7 +1,7 @@
 {
   "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
   "name": "io.github.KitDevUA/video-vision-mcp",
-  "description": "Analyze any video (local file, URL, or Jira attachment) into frames + transcript for Claude — local ffmpeg+whisper.cpp, or cloud OpenAI/Groq/Gemini.",
+  "description": "Analyze any video (file, URL, or Jira attachment) into frames + transcript for Claude Code",
   "version": "0.1.0",
   "repository": {
     "url": "https://github.com/KitDevUA/video-vision-mcp",
