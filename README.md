@@ -4,6 +4,8 @@
 ![Python](https://img.shields.io/badge/python-3.10%2B-blue)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
+<!-- mcp-name: io.github.KitDevUA/video-vision-mcp -->
+
 An MCP server that gives Claude Code the ability to **analyze any video** —
 a local file, a URL, or a Jira ticket attachment — through one set of tools.
 
@@ -42,20 +44,27 @@ the session the first time video content is sent to a third party.
 
 ## Install
 
-Requires **Python ≥ 3.10**. A single install pulls everything — including the
+Requires **Python ≥ 3.10**. A single install pulls everything — backends, plus the
 ffmpeg and whisper.cpp dependencies. **Nothing is ever installed globally on your
 machine** (no brew/apt/winget, no sudo).
 
+### Use it (recommended)
+
+With [uv](https://docs.astral.sh/uv/) you don't install it explicitly — `uvx` runs
+the published package on demand (see [Register in Claude Code](#register-in-claude-code)).
+To install into an environment instead:
+
 ```bash
-git clone <this-repo> video-vision-mcp
+uv pip install video-vision-mcp     # or: pip install video-vision-mcp
+```
+
+### From source (development)
+
+```bash
+git clone https://github.com/KitDevUA/video-vision-mcp.git
 cd video-vision-mcp
-
-# Recommended: uv (https://docs.astral.sh/uv/)
 uv venv && source .venv/bin/activate
-uv pip install -e .            # all backends bundled
-
-# or plain pip
-pip install -e .
+uv pip install -e ".[dev]"          # all backends bundled
 ```
 
 ### Dependencies — fully self-contained
@@ -86,22 +95,25 @@ so Jira creds (`JIRA_URL` / `JIRA_USERNAME` / `JIRA_API_TOKEN`) can be shared.
 ## Register in Claude Code
 
 Add to your project `.mcp.json` (or global config), next to `mcp-atlassian` — see
-`.mcp.json.example`. With `uv` installed:
+`.mcp.json.example`:
 
 ```json
 {
   "mcpServers": {
     "video-vision": {
       "command": "uvx",
-      "args": ["--from", "/abs/path/to/video-vision-mcp", "video-vision-mcp"],
-      "env": { "VIDEO_MCP_ENV": "/abs/path/to/video-vision-mcp/.env" }
+      "args": ["video-vision-mcp"],
+      "env": { "VIDEO_MCP_ENV": "/abs/path/to/.env" }
     }
   }
 }
 ```
 
-Or, if installed into a venv, point `command` at that venv's `video-vision-mcp`
-executable. Restart Claude Code; the `video-vision` tools then appear.
+`uvx` downloads and runs the published package automatically — no manual install
+step. `VIDEO_MCP_ENV` is optional (tier 1 needs no keys); point it at your `.env`
+if you use Jira or cloud backends. For local development against a checkout, use
+`"args": ["--from", "/abs/path/to/video-vision-mcp", "video-vision-mcp"]` instead.
+Restart Claude Code; the `video-vision` tools then appear.
 
 ## Cache
 

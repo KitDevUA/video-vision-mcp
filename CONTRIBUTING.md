@@ -45,3 +45,26 @@ backend behind an explicit marker or skip.
 1. Branch from `main`.
 2. Make the change + add/adjust tests; `pytest` green.
 3. Open a PR describing what and why. CI (tests + build) must pass.
+
+## Releasing (maintainers)
+
+**One-time — PyPI Trusted Publishing (no tokens):** on pypi.org create/claim the
+`video-vision-mcp` project, then add a GitHub publisher under *Publishing*:
+owner `KitDevUA`, repo `video-vision-mcp`, workflow `publish.yml`, environment
+`pypi`.
+
+**Each release:**
+
+1. Bump `version` in both `pyproject.toml` and `server.json` (keep them equal).
+2. Push, let CI pass.
+3. Create a GitHub Release with tag `vX.Y.Z`. This triggers `.github/workflows/publish.yml`,
+   which builds and uploads to PyPI via OIDC.
+4. **MCP registry** (after the PyPI version is live):
+   ```bash
+   # install the publisher CLI once (see github.com/modelcontextprotocol/registry)
+   mcp-publisher login github
+   mcp-publisher publish        # reads ./server.json
+   ```
+   The registry verifies package ownership via the `mcp-name:` marker in the
+   README (carried into the PyPI description). The `io.github.*` namespace is
+   authorized by your GitHub login.
