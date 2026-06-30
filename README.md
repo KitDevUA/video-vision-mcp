@@ -1,5 +1,9 @@
 # video-vision-mcp
 
+[![CI](https://github.com/KitDevUA/video-vision-mcp/actions/workflows/ci.yml/badge.svg)](https://github.com/KitDevUA/video-vision-mcp/actions/workflows/ci.yml)
+![Python](https://img.shields.io/badge/python-3.10%2B-blue)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+
 An MCP server that gives Claude Code the ability to **analyze any video** —
 a local file, a URL, or a Jira ticket attachment — through one set of tools.
 
