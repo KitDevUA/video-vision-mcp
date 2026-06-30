@@ -1,6 +1,7 @@
 # video-vision-mcp
 
 [![CI](https://github.com/KitDevUA/video-vision-mcp/actions/workflows/ci.yml/badge.svg)](https://github.com/KitDevUA/video-vision-mcp/actions/workflows/ci.yml)
+[![PyPI](https://img.shields.io/pypi/v/video-vision-mcp)](https://pypi.org/project/video-vision-mcp/)
 ![Python](https://img.shields.io/badge/python-3.10%2B-blue)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
