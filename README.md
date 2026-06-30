@@ -42,8 +42,9 @@ the session the first time video content is sent to a third party.
 
 ## Install
 
-Requires **Python ≥ 3.10**. `ffmpeg` and `whisper.cpp` are **auto-installed on
-first use** if missing (or you get a precise manual command — never a silent crash).
+Requires **Python ≥ 3.10**. A single install pulls everything — including the
+ffmpeg and whisper.cpp dependencies. **Nothing is ever installed globally on your
+machine** (no brew/apt/winget, no sudo).
 
 ```bash
 git clone <this-repo> video-vision-mcp
@@ -57,31 +58,20 @@ uv pip install -e .            # all backends bundled
 pip install -e .
 ```
 
-All backend SDKs (OpenAI, Groq, Gemini, pywhispercpp) are bundled by default —
-one install enables every tier. `ffmpeg` and `whisper.cpp` are the only external
-pieces, auto-installed on first use.
+### Dependencies — fully self-contained
 
-### Per-OS dependency notes
-
-`ffmpeg`/`ffprobe` auto-install path:
-
-| OS | Auto-install via | Manual fallback |
-|---|---|---|
-| **macOS** | `brew install ffmpeg` | install [Homebrew](https://brew.sh) first |
-| **Linux** | `apt-get` / `dnf` | `sudo apt-get install ffmpeg` |
-| **Windows** | `winget` (`Gyan.FFmpeg`) / `choco` | `winget install Gyan.FFmpeg` |
-
-`whisper.cpp` (tier 1 transcription) ships as the bundled `pywhispercpp` binding
-(prebuilt wheels, no system build on common platforms). If no wheel is available
-the server falls back to a `whisper-cli` binary, which on macOS it can install
-via `brew install whisper-cpp` (Metal-accelerated).
-
-The ggml model (`base` by default) is downloaded automatically from Hugging Face
-into the cache on first transcription. Override with `VIDEO_MCP_WHISPER_MODEL`
-(`tiny`/`base`/`small`/`medium`/`large-v3`) or `VIDEO_MCP_WHISPER_MODEL_PATH`.
-
-If you only want cloud transcription, set `OPENAI_API_KEY` or `GROQ_API_KEY`
-(tier 2) — or `GEMINI_API_KEY` (tier 3); whisper.cpp is then never invoked.
+- **ffmpeg / ffprobe**: if they are already on your `PATH`, those system binaries
+  are used. Otherwise the bundled `static-ffmpeg` package supplies them (fetched
+  once into its own local cache — never a system-wide install).
+- **whisper.cpp** (tier 1 transcription): shipped as the bundled `pywhispercpp`
+  binding (prebuilt wheels; builds from source only if no wheel exists for your
+  platform/Python). A `whisper-cli` already on `PATH` is used if present.
+- **whisper model**: the ggml model (`base` by default) downloads from Hugging
+  Face into the cache on first transcription. Override with
+  `VIDEO_MCP_WHISPER_MODEL` (`tiny`/`base`/`small`/`medium`/`large-v3`) or
+  `VIDEO_MCP_WHISPER_MODEL_PATH`.
+- **cloud-only**: set `OPENAI_API_KEY` / `GROQ_API_KEY` (tier 2) or
+  `GEMINI_API_KEY` (tier 3); whisper.cpp is then never invoked.
 
 ## Configure
 

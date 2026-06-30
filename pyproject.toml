@@ -38,6 +38,7 @@ dependencies = [
     "groq>=0.11",
     "google-genai>=0.3.0",
     "pywhispercpp>=1.2.0",
+    "static-ffmpeg>=2.5",
 ]
 
 [project.optional-dependencies]
