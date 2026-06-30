@@ -1,0 +1,32 @@
+# Secrets — NEVER commit. Each user keeps their own .env.
+.env
+.env.*
+# (env.example has no leading dot, so it is tracked and not matched above.)
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+build/
+dist/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+
+# Virtualenvs
+.venv/
+venv/
+env/
+
+# Local cache: downloaded videos, whisper models, analysis results
+# (default lives at ~/.cache/video-vision-mcp, but ignore any local copy too)
+.cache/
+*.ggml.bin
+ggml-*.bin
+
+# OS / editor
+.DS_Store
+*.swp
+.idea/
+.vscode/

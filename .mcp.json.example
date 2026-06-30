@@ -1,0 +1,20 @@
+{
+  "mcpServers": {
+    "mcp-atlassian": {
+      "command": "uvx",
+      "args": ["mcp-atlassian"],
+      "env": {
+        "JIRA_URL": "https://your-org.atlassian.net",
+        "JIRA_USERNAME": "you@example.com",
+        "JIRA_API_TOKEN": "your-atlassian-api-token"
+      }
+    },
+    "video-vision": {
+      "command": "uvx",
+      "args": ["--from", "/Users/kitdev/Documents/projects/video-vision-mcp", "video-vision-mcp"],
+      "env": {
+        "VIDEO_MCP_ENV": "/Users/kitdev/Documents/projects/video-vision-mcp/.env"
+      }
+    }
+  }
+}
