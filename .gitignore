@@ -30,3 +30,6 @@ ggml-*.bin
 *.swp
 .idea/
 .vscode/
+
+# Local AI assistant notes (not part of the published project)
+.claude/
