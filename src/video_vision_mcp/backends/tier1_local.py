@@ -17,9 +17,9 @@ from ..media.installer import (
 from .base import AnalysisResult, Frame, TranscriptSegment
 
 
-def build_frames(path: Path, meta: dict, cfg: Config) -> list[Frame]:
-    """Extract evenly-spaced frames (shared by tier 1 and tier 2)."""
-    count = ffmpeg_tools.adaptive_frame_count(meta["duration"], cfg.min_frames, cfg.max_frames)
+def build_frames(path: Path, meta: dict, cfg: Config, interval: float) -> list[Frame]:
+    """Extract frames every `interval` seconds (shared by tier 1 and tier 2)."""
+    count = ffmpeg_tools.frame_count_for_interval(meta["duration"], interval, cfg.max_frames)
     raw = ffmpeg_tools.extract_frames(path, count, cfg.frame_max_px, meta["duration"])
     return [Frame(timestamp=ts, image_bytes=img) for ts, img in raw]
 
@@ -77,7 +77,8 @@ def transcribe(wav: Path, cfg: Config) -> list[TranscriptSegment]:
     return [s for s in segments if not _is_silence(s.text)]
 
 
-def analyze(path: Path, source: str, cfg: Config) -> AnalysisResult:
+def analyze(path: Path, source: str, cfg: Config, frame_interval: float | None = None) -> AnalysisResult:
+    interval = frame_interval if frame_interval and frame_interval > 0 else cfg.frame_interval_sec
     meta = ffmpeg_tools.probe(path)
     result = AnalysisResult(
         source=source,
@@ -87,7 +88,8 @@ def analyze(path: Path, source: str, cfg: Config) -> AnalysisResult:
         height=meta["height"],
         has_audio=meta["has_audio"],
     )
-    result.frames = build_frames(path, meta, cfg)
+    result.frames = build_frames(path, meta, cfg, interval)
+    result.notes.append(f"frame sampling: every {interval:g}s")
     result.notes.append("transcription: whisper.cpp (local)")
 
     if not meta["has_audio"]:

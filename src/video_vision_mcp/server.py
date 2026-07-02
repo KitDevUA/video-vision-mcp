@@ -26,7 +26,9 @@ If the video lives behind an integration (e.g. a Jira attachment), first obtain
 it via that integration — download it to a local file or get a direct URL — then
 pass the resulting file_path or url here.
 
-Inputs are mutually exclusive: pass exactly one of file_path / url.
+Inputs are mutually exclusive: pass exactly one of file_path / url. Use
+`frame_interval` (seconds between frames, default 1.0) to control frame density
+when the user wants finer or coarser sampling.
 """
 
 cfg = Config.load()
@@ -38,6 +40,7 @@ mcp = FastMCP("video-vision-mcp", instructions=INSTRUCTIONS)
 def analyze_video(
     file_path: str | None = None,
     url: str | None = None,
+    frame_interval: float | None = None,
     force_refresh: bool = False,
 ) -> list[TextContent | ImageContent]:
     """Analyze a video into frames + transcript + metadata.
@@ -46,12 +49,19 @@ def analyze_video(
       - file_path: local path to a video file (already on disk).
       - url: direct/streaming URL (yt-dlp for known sites, HTTP otherwise).
 
+    frame_interval: seconds between sampled frames (default 1.0 = one per second).
+    Denser sampling: 0.5 / 0.25 / 0.1; sparser: 2 / 5; or any custom value. The
+    total is capped by the frame budget so long/dense videos can't flood context.
+    Ignored by the native Gemini backend (it ingests the whole video).
+
     The backend (local whisper.cpp / OpenAI / Groq / native Gemini) is chosen
     automatically from configured keys and named in the result metadata. Results
-    are cached per (file-hash, backend); pass force_refresh=true to recompute.
+    are cached per (file-hash, backend, frame_interval); pass force_refresh=true
+    to recompute.
     """
     result = pipeline.analyze(
-        cfg, cache, file_path=file_path, url=url, force_refresh=force_refresh,
+        cfg, cache, file_path=file_path, url=url,
+        frame_interval=frame_interval, force_refresh=force_refresh,
     )
     return result.to_mcp_content(include_frames=True)
 
@@ -108,12 +118,14 @@ def list_recent_analyses() -> str:
     index = sorted(cache.read_index(), key=lambda e: e.get("analyzed_at", 0), reverse=True)
     if not index:
         return "No analyses cached yet."
-    lines = ["## Recent analyses", "", "| When (UTC) | Backend | Source | Duration | Speech | Frames |", "|---|---|---|---|---|---|"]
+    lines = ["## Recent analyses", "", "| When (UTC) | Backend | Interval | Source | Duration | Speech | Frames |", "|---|---|---|---|---|---|---|"]
     for e in index:
         when = datetime.fromtimestamp(e.get("analyzed_at", 0), tz=timezone.utc).strftime("%Y-%m-%d %H:%M")
         dur = _fmt_ts(e["duration"]) if e.get("duration") else "—"
+        variant = e.get("variant", "")
+        interval = f"{variant[1:]}s" if variant.startswith("i") else "—"
         lines.append(
-            f"| {when} | {e['backend']} | {e['source']} | {dur} | "
+            f"| {when} | {e['backend']} | {interval} | {e['source']} | {dur} | "
             f"{'yes' if e.get('has_speech') else 'no'} | {e.get('frames', 0)} |"
         )
     return "\n".join(lines)
@@ -123,18 +135,21 @@ def list_recent_analyses() -> str:
 def compare_backends(
     file_path: str | None = None,
     url: str | None = None,
+    frame_interval: float | None = None,
 ) -> list[TextContent | ImageContent]:
     """Run the same video through tier 1 (local) and tier 3 (Gemini) side by side.
 
-    Requires a Gemini key for the tier-3 half; otherwise reports that tier 3 is
-    unavailable and returns only the local result.
+    frame_interval (seconds between frames) applies to the tier-1 half. Requires a
+    Gemini key for the tier-3 half; otherwise reports that tier 3 is unavailable
+    and returns only the local result.
     """
     available = cfg.available_backends()
     out: list[TextContent | ImageContent] = [
         TextContent(type="text", text="# Backend comparison\n\n---\n## Tier 1 — local (ffmpeg + whisper.cpp)")
     ]
     local = pipeline.analyze(
-        cfg, cache, file_path=file_path, url=url, backend_override="tier1-local",
+        cfg, cache, file_path=file_path, url=url,
+        backend_override="tier1-local", frame_interval=frame_interval,
     )
     out.extend(local.to_mcp_content(include_frames=True))
 

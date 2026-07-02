@@ -28,11 +28,12 @@ class Cache:
         self.root.mkdir(parents=True, exist_ok=True)
         self.index_path = self.root / "index.json"
 
-    def _entry_dir(self, digest: str, backend: str) -> Path:
-        return self.root / backend / digest
+    def _entry_dir(self, digest: str, backend: str, variant: str = "") -> Path:
+        namespace = f"{backend}__{variant}" if variant else backend
+        return self.root / namespace / digest
 
-    def load(self, digest: str, backend: str) -> AnalysisResult | None:
-        entry = self._entry_dir(digest, backend)
+    def load(self, digest: str, backend: str, variant: str = "") -> AnalysisResult | None:
+        entry = self._entry_dir(digest, backend, variant)
         result_json = entry / "result.json"
         if not result_json.is_file():
             return None
@@ -57,23 +58,27 @@ class Cache:
             notes=data.get("notes", []),
         )
 
-    def save(self, digest: str, result: AnalysisResult) -> None:
-        entry = self._entry_dir(digest, result.backend)
+    def save(self, digest: str, result: AnalysisResult, variant: str = "") -> None:
+        entry = self._entry_dir(digest, result.backend, variant)
         (entry / "frames").mkdir(parents=True, exist_ok=True)
         for i, fr in enumerate(result.frames):
             (entry / "frames" / f"{i:03d}.jpg").write_bytes(fr.image_bytes)
         (entry / "result.json").write_text(
             json.dumps(result.to_json_dict(), ensure_ascii=False, indent=2), encoding="utf-8"
         )
-        self._record_index(digest, result)
+        self._record_index(digest, result, variant)
 
-    def _record_index(self, digest: str, result: AnalysisResult) -> None:
+    def _record_index(self, digest: str, result: AnalysisResult, variant: str = "") -> None:
         index = self.read_index()
-        index = [e for e in index if not (e["hash"] == digest and e["backend"] == result.backend)]
+        index = [
+            e for e in index
+            if not (e["hash"] == digest and e["backend"] == result.backend and e.get("variant", "") == variant)
+        ]
         index.append(
             {
                 "hash": digest,
                 "backend": result.backend,
+                "variant": variant,
                 "source": result.source,
                 "duration": result.duration,
                 "has_speech": bool(result.transcript_text or result.segments),

@@ -42,10 +42,21 @@ def test_parse_timestamp():
     assert parse_timestamp("1:01:05") == 3665.0
 
 
-def test_adaptive_frame_count_clamps():
-    assert ffmpeg_tools.adaptive_frame_count(None, 8, 60) == 8
-    assert ffmpeg_tools.adaptive_frame_count(2.0, 8, 60) == 8       # short → min
-    assert ffmpeg_tools.adaptive_frame_count(10_000, 8, 60) == 60   # long → max
+def test_frame_count_for_interval():
+    assert ffmpeg_tools.frame_count_for_interval(None, 1.0, 60) == 1
+    assert ffmpeg_tools.frame_count_for_interval(9.0, 1.0, 60) == 9      # once per second
+    assert ffmpeg_tools.frame_count_for_interval(9.0, 0.5, 60) == 18     # twice per second
+    assert ffmpeg_tools.frame_count_for_interval(9.0, 5.0, 60) == 2      # sparse honored (no min floor)
+    assert ffmpeg_tools.frame_count_for_interval(1000.0, 0.1, 60) == 60  # capped by max_frames
+
+
+def test_frame_interval_config_default(monkeypatch, tmp_path):
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.delenv("VIDEO_MCP_FRAME_INTERVAL_SEC", raising=False)
+    monkeypatch.delenv("VIDEO_MCP_ENV", raising=False)
+    assert Config.load().frame_interval_sec == 1.0
+    monkeypatch.setenv("VIDEO_MCP_FRAME_INTERVAL_SEC", "0.25")
+    assert Config.load().frame_interval_sec == 0.25
 
 
 def test_url_guard_blocks_non_public():

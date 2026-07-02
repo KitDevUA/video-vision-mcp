@@ -39,7 +39,8 @@ the session the first time video content is sent to a third party.
 
 ## Tools
 
-- `analyze_video` — frames + transcript + metadata (the main tool).
+- `analyze_video` — frames + transcript + metadata (the main tool). `frame_interval`
+  sets seconds between frames (default 1.0; e.g. 0.5/0.25/0.1 denser, 2/5 sparser).
 - `get_video_transcript_only` — transcript text only.
 - `extract_frames_at` — frames at specific timestamps (`"00:42"`, `"1:05"`, `12.5`).
 - `list_recent_analyses` — cached analyses + backend used.

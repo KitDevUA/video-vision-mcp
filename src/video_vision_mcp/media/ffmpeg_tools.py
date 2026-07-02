@@ -57,11 +57,15 @@ def probe(path: Path) -> dict:
     }
 
 
-def adaptive_frame_count(duration: float | None, min_frames: int, max_frames: int) -> int:
-    if not duration or duration <= 0:
-        return min_frames
-    # One frame roughly every 2s, clamped to the budget.
-    return max(min_frames, min(max_frames, int(duration // 2) + 1))
+def frame_count_for_interval(duration: float | None, interval: float, max_frames: int) -> int:
+    """Frames to sample given a seconds-per-frame interval, capped at max_frames.
+
+    max_frames is a safety ceiling so a dense interval on a long video can't
+    explode the model context.
+    """
+    if not duration or duration <= 0 or not interval or interval <= 0:
+        return 1
+    return max(1, min(max_frames, round(duration / interval)))
 
 
 def extract_frames(path: Path, count: int, max_px: int, duration: float | None) -> list[tuple[float, bytes]]:

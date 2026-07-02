@@ -31,12 +31,12 @@ def parse_timestamp(value: str | float | int) -> float:
     return float(text)
 
 
-def _dispatch(backend: str, path: Path, source: str, cfg: Config) -> AnalysisResult:
+def _dispatch(backend: str, path: Path, source: str, cfg: Config, frame_interval: float | None) -> AnalysisResult:
     if backend == "tier3-gemini":
-        return tier3_gemini.analyze(path, source, cfg)
+        return tier3_gemini.analyze(path, source, cfg)  # native — no local frame sampling
     if backend in ("tier2-openai", "tier2-groq"):
-        return tier2_cloud_asr.analyze(path, source, cfg, backend)
-    return tier1_local.analyze(path, source, cfg)
+        return tier2_cloud_asr.analyze(path, source, cfg, backend, frame_interval)
+    return tier1_local.analyze(path, source, cfg, frame_interval)
 
 
 def analyze(
@@ -46,23 +46,29 @@ def analyze(
     file_path: str | None = None,
     url: str | None = None,
     backend_override: str | None = None,
+    frame_interval: float | None = None,
     force_refresh: bool = False,
 ) -> AnalysisResult:
     resolved = resolver.resolve(cfg, file_path, url)
     backend = cfg.select_backend(backend_override)
     digest = file_hash(resolved.path)
 
+    # Frame interval changes the sampled frames, so it must be part of the cache
+    # key (tier 3 has no local frames, so its cache is interval-independent).
+    effective = frame_interval if frame_interval and frame_interval > 0 else cfg.frame_interval_sec
+    variant = "" if backend == "tier3-gemini" else f"i{effective:g}"
+
     if not force_refresh:
-        cached = cache.load(digest, backend)
+        cached = cache.load(digest, backend, variant)
         if cached is not None:
             cached.notes.append("served from cache")
             return cached
 
     warning = privacy.warn_once(backend)
-    result = _dispatch(backend, resolved.path, resolved.label, cfg)
+    result = _dispatch(backend, resolved.path, resolved.label, cfg, frame_interval)
     if warning:
         result.notes.insert(0, warning)
-    cache.save(digest, result)
+    cache.save(digest, result, variant)
     return result
 
 

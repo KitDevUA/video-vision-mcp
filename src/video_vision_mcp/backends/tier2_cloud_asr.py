@@ -68,8 +68,9 @@ def _transcribe_groq(audio: Path, cfg: Config) -> tuple[list[TranscriptSegment],
     return _segments_from_verbose(resp), getattr(resp, "text", "")
 
 
-def analyze(path: Path, source: str, cfg: Config, backend: str) -> AnalysisResult:
+def analyze(path: Path, source: str, cfg: Config, backend: str, frame_interval: float | None = None) -> AnalysisResult:
     provider = "openai" if backend == "tier2-openai" else "groq"
+    interval = frame_interval if frame_interval and frame_interval > 0 else cfg.frame_interval_sec
     meta = ffmpeg_tools.probe(path)
     result = AnalysisResult(
         source=source,
@@ -79,8 +80,9 @@ def analyze(path: Path, source: str, cfg: Config, backend: str) -> AnalysisResul
         height=meta["height"],
         has_audio=meta["has_audio"],
     )
-    result.frames = build_frames(path, meta, cfg)
+    result.frames = build_frames(path, meta, cfg, interval)
     label = "OpenAI Whisper API" if provider == "openai" else "Groq whisper-large-v3"
+    result.notes.append(f"frame sampling: every {interval:g}s")
     result.notes.append(f"transcription: {label}")
 
     if not meta["has_audio"]:

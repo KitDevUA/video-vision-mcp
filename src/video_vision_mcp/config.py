@@ -39,6 +39,13 @@ def _int(value: str | None, default: int) -> int:
         return default
 
 
+def _float(value: str | None, default: float) -> float:
+    try:
+        return float(value) if value is not None else default
+    except ValueError:
+        return default
+
+
 @dataclass(frozen=True)
 class Config:
     # Cloud backend keys (all optional).
@@ -54,10 +61,10 @@ class Config:
     gemini_model: str
     disable_gemini: bool
 
-    # Frame extraction budget.
+    # Frame extraction.
     max_frames: int
-    min_frames: int
     frame_max_px: int
+    frame_interval_sec: float
 
     cache_dir: Path
 
@@ -75,8 +82,8 @@ class Config:
             gemini_model=os.environ.get("VIDEO_MCP_GEMINI_MODEL", "gemini-2.5-flash"),
             disable_gemini=_bool(os.environ.get("VIDEO_MCP_DISABLE_GEMINI")),
             max_frames=_int(os.environ.get("VIDEO_MCP_MAX_FRAMES"), 60),
-            min_frames=_int(os.environ.get("VIDEO_MCP_MIN_FRAMES"), 8),
             frame_max_px=_int(os.environ.get("VIDEO_MCP_FRAME_MAX_PX"), 1024),
+            frame_interval_sec=_float(os.environ.get("VIDEO_MCP_FRAME_INTERVAL_SEC"), 1.0),
             cache_dir=Path(cache_dir).expanduser()
             if cache_dir
             else Path.home() / ".cache" / "video-vision-mcp",
