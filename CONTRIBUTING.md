@@ -48,23 +48,21 @@ backend behind an explicit marker or skip.
 
 ## Releasing (maintainers)
 
-**One-time — PyPI Trusted Publishing (no tokens):** on pypi.org create/claim the
-`video-vision-mcp` project, then add a GitHub publisher under *Publishing*:
-owner `KitDevUA`, repo `video-vision-mcp`, workflow `publish.yml`, environment
-`pypi`.
+Releases are **fully tag-driven** — you never hand-edit the version. Publishing
+`.github/workflows/publish.yml` stamps the version from the release tag into
+`pyproject.toml` + `server.json`, then publishes to PyPI and the MCP registry,
+both via OIDC (no tokens). `__version__` derives from installed metadata.
 
-**Each release:**
+**To cut a release:** create a GitHub Release with tag `vX.Y.Z`. That's it.
 
-1. Bump `version` in both `pyproject.toml` and `server.json` (keep them equal).
-2. Push, let CI pass.
-3. Create a GitHub Release with tag `vX.Y.Z`. This triggers `.github/workflows/publish.yml`,
-   which builds and uploads to PyPI via OIDC.
-4. **MCP registry** (after the PyPI version is live):
-   ```bash
-   # install the publisher CLI once (see github.com/modelcontextprotocol/registry)
-   mcp-publisher login github
-   mcp-publisher publish        # reads ./server.json
-   ```
-   The registry verifies package ownership via the `mcp-name:` marker in the
-   README (carried into the PyPI description). The `io.github.*` namespace is
-   authorized by your GitHub login.
+**One-time setup:**
+- **PyPI Trusted Publishing:** on pypi.org add a GitHub publisher for the
+  `video-vision-mcp` project — owner `KitDevUA`, repo `video-vision-mcp`,
+  workflow `publish.yml`, environment `pypi`.
+- **MCP registry:** authorized via GitHub OIDC (`mcp-publisher login github-oidc`
+  in the workflow); the `io.github.KitDevUA` namespace matches the repo owner.
+  Ownership of the PyPI package is verified via the `mcp-name:` marker in the
+  README (carried into the PyPI description).
+
+The committed `version` fields are just a local-dev fallback; the release tag is
+the source of truth for what gets published.

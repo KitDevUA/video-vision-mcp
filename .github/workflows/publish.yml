@@ -1,7 +1,8 @@
-name: Publish to PyPI
+name: Publish (PyPI + MCP Registry)
 
-# Fires when you publish a GitHub Release. Uses PyPI Trusted Publishing (OIDC):
-# no API token stored anywhere — see CONTRIBUTING "Releasing" for the setup.
+# On a published GitHub Release, stamp the version from the tag into pyproject +
+# server.json, then publish to PyPI and the MCP registry — both via OIDC, no
+# tokens, no manual version bump. Tag drives everything.
 on:
   release:
     types: [published]
@@ -11,13 +12,33 @@ jobs:
     runs-on: ubuntu-latest
     environment: pypi
     permissions:
-      id-token: write   # required for OIDC trusted publishing
+      id-token: write   # OIDC for PyPI trusted publishing AND the MCP registry
+      contents: read
     steps:
       - uses: actions/checkout@v7
+
+      - name: Stamp version from release tag
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          echo "Releasing version: $VERSION"
+          sed -i "s/^version = \".*\"/version = \"$VERSION\"/" pyproject.toml
+          jq --arg v "$VERSION" '.version = $v | .packages[0].version = $v' server.json > server.tmp
+          mv server.tmp server.json
+
       - uses: astral-sh/setup-uv@v7
       - name: Build sdist + wheel
         run: uv build
       - name: Validate metadata
         run: uvx twine check dist/*
-      - name: Publish
+      - name: Publish to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
+
+      - name: Install mcp-publisher
+        run: |
+          curl -L "https://github.com/modelcontextprotocol/registry/releases/latest/download/mcp-publisher_$(uname -s | tr '[:upper:]' '[:lower:]')_$(uname -m | sed 's/x86_64/amd64/;s/aarch64/arm64/').tar.gz" | tar xz mcp-publisher
+      - name: Authenticate to MCP Registry (OIDC)
+        run: ./mcp-publisher login github-oidc
+      - name: Wait for PyPI to index the new version
+        run: sleep 20
+      - name: Publish to MCP Registry
+        run: ./mcp-publisher publish
