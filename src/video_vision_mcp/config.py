@@ -67,6 +67,7 @@ class Config:
     frame_interval_sec: float
 
     cache_dir: Path
+    cache_ttl_hours: float
 
     @classmethod
     def load(cls) -> "Config":
@@ -87,6 +88,7 @@ class Config:
             cache_dir=Path(cache_dir).expanduser()
             if cache_dir
             else Path.home() / ".cache" / "video-vision-mcp",
+            cache_ttl_hours=_float(os.environ.get("VIDEO_MCP_CACHE_TTL_HOURS"), 24.0),
         )
 
     def select_backend(self, override: str | None = None) -> str:

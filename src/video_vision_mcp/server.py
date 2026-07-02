@@ -32,7 +32,7 @@ when the user wants finer or coarser sampling.
 """
 
 cfg = Config.load()
-cache = Cache(cfg.cache_dir)
+cache = Cache(cfg.cache_dir, ttl_seconds=cfg.cache_ttl_hours * 3600)
 mcp = FastMCP("video-vision-mcp", instructions=INSTRUCTIONS)
 
 

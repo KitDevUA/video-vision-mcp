@@ -2,6 +2,9 @@
 
 from __future__ import annotations
 
+import os
+import time
+
 from video_vision_mcp.backends.base import (
     AnalysisResult,
     Frame,
@@ -61,6 +64,41 @@ def test_cache_round_trip_and_backend_isolation(tmp_path):
 
     # Same hash, different backend → cached separately (must miss).
     assert cache.load("deadbeef", "tier3-gemini") is None
+
+
+def test_cache_ttl_prunes_and_skips(tmp_path):
+    cache = Cache(tmp_path, ttl_seconds=3600)
+    result = AnalysisResult(source="s", backend="tier1-local")
+    result.frames = [Frame(0.0, b"x")]
+    cache.save("h", result)
+    assert cache.load("h", "tier1-local") is not None      # fresh → hit
+
+    # Backdate the entry 2h → older than 1h TTL.
+    rj = tmp_path / "tier1-local" / "h" / "result.json"
+    old = time.time() - 7200
+    os.utime(rj, (old, old))
+
+    # Lazy expiry on read: miss + entry deleted.
+    assert cache.load("h", "tier1-local") is None
+    assert not (tmp_path / "tier1-local" / "h").exists()
+
+    # Startup prune also clears backdated entries.
+    result2 = AnalysisResult(source="s", backend="tier1-local")
+    result2.frames = [Frame(0.0, b"y")]
+    cache.save("h2", result2)
+    rj2 = tmp_path / "tier1-local" / "h2" / "result.json"
+    os.utime(rj2, (old, old))
+    Cache(tmp_path, ttl_seconds=3600)  # prunes on init
+    assert not (tmp_path / "tier1-local" / "h2").exists()
+
+
+def test_cache_ttl_disabled_keeps(tmp_path):
+    cache = Cache(tmp_path, ttl_seconds=0)  # disabled
+    result = AnalysisResult(source="s", backend="tier1-local")
+    cache.save("h", result)
+    rj = tmp_path / "tier1-local" / "h" / "result.json"
+    os.utime(rj, (time.time() - 999999, time.time() - 999999))
+    assert cache.load("h", "tier1-local") is not None  # never expires
 
 
 def test_to_mcp_content_layout():

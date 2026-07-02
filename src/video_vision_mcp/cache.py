@@ -1,13 +1,16 @@
-"""Content-addressed cache keyed by (file hash, backend).
+"""Content-addressed cache keyed by (file hash, backend, frame interval).
 
-Layout: <cache_dir>/<backend>/<sha256>/{result.json, frames/000.jpg ...}
-A flat index.json at the cache root powers `list_recent_analyses`.
+Layout: <cache_dir>/<backend[__variant]>/<sha256>/{result.json, frames/000.jpg ...}
+A flat index.json at the cache root powers `list_recent_analyses`. Entries older
+than the TTL are pruned on startup and skipped on read; downloaded videos are
+pruned too, but whisper models are kept (expensive to re-fetch).
 """
 
 from __future__ import annotations
 
 import hashlib
 import json
+import shutil
 import time
 from pathlib import Path
 
@@ -23,10 +26,38 @@ def file_hash(path: Path, chunk: int = 1 << 20) -> str:
 
 
 class Cache:
-    def __init__(self, root: Path):
+    def __init__(self, root: Path, ttl_seconds: float = 0.0):
         self.root = root
         self.root.mkdir(parents=True, exist_ok=True)
         self.index_path = self.root / "index.json"
+        self.ttl_seconds = ttl_seconds
+        if ttl_seconds > 0:
+            self._prune_expired()
+
+    def _is_expired(self, path: Path) -> bool:
+        if self.ttl_seconds <= 0 or not path.exists():
+            return False
+        return (time.time() - path.stat().st_mtime) > self.ttl_seconds
+
+    def _prune_expired(self) -> None:
+        """Delete analysis entries + downloaded videos older than the TTL.
+
+        Whisper models (models/) are intentionally preserved.
+        """
+        for result_json in self.root.glob("*/*/result.json"):
+            if self._is_expired(result_json):
+                shutil.rmtree(result_json.parent, ignore_errors=True)
+        downloads = self.root / "downloads"
+        if downloads.is_dir():
+            for f in downloads.iterdir():
+                if f.is_file() and self._is_expired(f):
+                    f.unlink(missing_ok=True)
+        # Drop index records whose entry directory no longer exists.
+        index = [
+            e for e in self.read_index()
+            if self._entry_dir(e["hash"], e["backend"], e.get("variant", "")).is_dir()
+        ]
+        self.index_path.write_text(json.dumps(index, ensure_ascii=False, indent=2), encoding="utf-8")
 
     def _entry_dir(self, digest: str, backend: str, variant: str = "") -> Path:
         namespace = f"{backend}__{variant}" if variant else backend
@@ -36,6 +67,9 @@ class Cache:
         entry = self._entry_dir(digest, backend, variant)
         result_json = entry / "result.json"
         if not result_json.is_file():
+            return None
+        if self._is_expired(result_json):
+            shutil.rmtree(entry, ignore_errors=True)
             return None
         data = json.loads(result_json.read_text(encoding="utf-8"))
         frames: list[Frame] = []

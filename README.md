@@ -121,9 +121,13 @@ Restart Claude Code; the `video-vision` tools then appear.
 ## Cache
 
 Results are cached at `~/.cache/video-vision-mcp/` keyed by **(file hash,
-backend)** — re-analyzing the same video is instant, and switching backends
-keeps each result separately. Downloaded URLs and whisper models live under the
-same dir. Override with `VIDEO_MCP_CACHE_DIR`.
+backend, frame interval)** — re-analyzing the same video is instant, and
+switching backends or intervals keeps each result separately. Downloaded URLs and
+whisper models live under the same dir. Override with `VIDEO_MCP_CACHE_DIR`.
+
+Cached analyses and downloaded videos older than `VIDEO_MCP_CACHE_TTL_HOURS`
+(default **24**) are pruned on startup and skipped on read; set `0` to keep them
+forever. Whisper models are never pruned (expensive to re-download).
 
 ## Using it with an integration (e.g. Jira, Slack)
 
