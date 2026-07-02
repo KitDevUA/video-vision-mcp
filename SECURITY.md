@@ -22,9 +22,7 @@ before any public disclosure.
 
 ## Scope notes
 
-- The server reads credentials (Jira, OpenAI/Groq/Gemini keys) from a local
-  `.env`; it never logs or transmits them except to the corresponding provider.
+- The server reads API keys (OpenAI/Groq/Gemini) from a local `.env`; it never
+  logs or transmits them except to the corresponding provider.
 - The `url` input downloads remote content; private/loopback addresses are
   blocked to mitigate SSRF. Report any bypass.
-- The `jira_issue_key` path calls the Jira REST API with your stored token;
-  `attachment_id` is validated as numeric to prevent REST path traversal.

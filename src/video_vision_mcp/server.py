@@ -17,15 +17,16 @@ from .config import Config
 from . import pipeline
 
 INSTRUCTIONS = """\
-Analyze any video — local file, URL, or Jira attachment — as frames + transcript.
+Analyze a video (local file or URL) as frames + transcript. Standalone: it takes
+a ready video, it does not fetch from Jira/Slack/etc.
 
-PROACTIVE USE: whenever the user references a video attachment or video file
-(in a Jira ticket, a chat message, or a path), offer `analyze_video` without
-waiting to be explicitly asked to "analyze the video".
+PROACTIVE USE: whenever the user references a video file or video URL, offer
+`analyze_video` without waiting to be explicitly asked to "analyze the video".
+If the video lives behind an integration (e.g. a Jira attachment), first obtain
+it via that integration — download it to a local file or get a direct URL — then
+pass the resulting file_path or url here.
 
-Inputs are mutually exclusive: pass exactly one of file_path / url / jira_issue_key.
-For Jira, this server fetches the attachment itself via REST using the same
-credentials as mcp-atlassian — do not download it separately first.
+Inputs are mutually exclusive: pass exactly one of file_path / url.
 """
 
 cfg = Config.load()
@@ -37,27 +38,20 @@ mcp = FastMCP("video-vision-mcp", instructions=INSTRUCTIONS)
 def analyze_video(
     file_path: str | None = None,
     url: str | None = None,
-    jira_issue_key: str | None = None,
-    attachment_id: str | None = None,
     force_refresh: bool = False,
 ) -> list[TextContent | ImageContent]:
     """Analyze a video into frames + transcript + metadata.
 
     Provide exactly ONE source:
-      - file_path: local path to an already-downloaded video.
+      - file_path: local path to a video file (already on disk).
       - url: direct/streaming URL (yt-dlp for known sites, HTTP otherwise).
-      - jira_issue_key (+ optional attachment_id): fetched via Jira REST using the
-        shared .env creds. If attachment_id is omitted and the issue has exactly one
-        video attachment, it is picked automatically.
 
     The backend (local whisper.cpp / OpenAI / Groq / native Gemini) is chosen
     automatically from configured keys and named in the result metadata. Results
     are cached per (file-hash, backend); pass force_refresh=true to recompute.
     """
     result = pipeline.analyze(
-        cfg, cache,
-        file_path=file_path, url=url, jira_issue_key=jira_issue_key,
-        attachment_id=attachment_id, force_refresh=force_refresh,
+        cfg, cache, file_path=file_path, url=url, force_refresh=force_refresh,
     )
     return result.to_mcp_content(include_frames=True)
 
@@ -66,8 +60,6 @@ def analyze_video(
 def get_video_transcript_only(
     file_path: str | None = None,
     url: str | None = None,
-    jira_issue_key: str | None = None,
-    attachment_id: str | None = None,
     force_refresh: bool = False,
 ) -> str:
     """Fast path: return only the transcript text (no frame images).
@@ -76,9 +68,7 @@ def get_video_transcript_only(
     returns Gemini's analysis text instead of a plain transcript.
     """
     result = pipeline.analyze(
-        cfg, cache,
-        file_path=file_path, url=url, jira_issue_key=jira_issue_key,
-        attachment_id=attachment_id, force_refresh=force_refresh,
+        cfg, cache, file_path=file_path, url=url, force_refresh=force_refresh,
     )
     if result.gemini_summary is not None:
         return f"{result.metadata_block()}\n\n## Gemini analysis\n{result.gemini_summary}"
@@ -90,8 +80,6 @@ def extract_frames_at(
     timestamps: list[str],
     file_path: str | None = None,
     url: str | None = None,
-    jira_issue_key: str | None = None,
-    attachment_id: str | None = None,
 ) -> list[TextContent | ImageContent]:
     """Extract frames at specific timestamps.
 
@@ -101,8 +89,7 @@ def extract_frames_at(
     """
     seconds = [pipeline.parse_timestamp(t) for t in timestamps]
     resolved, frames, gemini_text = pipeline.frames_at(
-        cfg, timestamps=seconds,
-        file_path=file_path, url=url, jira_issue_key=jira_issue_key, attachment_id=attachment_id,
+        cfg, timestamps=seconds, file_path=file_path, url=url,
     )
     if gemini_text is not None:
         return [TextContent(type="text", text=f"## Frames @ {', '.join(timestamps)} (Gemini)\n{gemini_text}")]
@@ -136,8 +123,6 @@ def list_recent_analyses() -> str:
 def compare_backends(
     file_path: str | None = None,
     url: str | None = None,
-    jira_issue_key: str | None = None,
-    attachment_id: str | None = None,
 ) -> list[TextContent | ImageContent]:
     """Run the same video through tier 1 (local) and tier 3 (Gemini) side by side.
 
@@ -149,8 +134,7 @@ def compare_backends(
         TextContent(type="text", text="# Backend comparison\n\n---\n## Tier 1 — local (ffmpeg + whisper.cpp)")
     ]
     local = pipeline.analyze(
-        cfg, cache, file_path=file_path, url=url, jira_issue_key=jira_issue_key,
-        attachment_id=attachment_id, backend_override="tier1-local",
+        cfg, cache, file_path=file_path, url=url, backend_override="tier1-local",
     )
     out.extend(local.to_mcp_content(include_frames=True))
 
@@ -159,8 +143,7 @@ def compare_backends(
         out.append(TextContent(type="text", text="_Gemini backend unavailable (no GEMINI_API_KEY). Skipped._"))
         return out
     gemini = pipeline.analyze(
-        cfg, cache, file_path=file_path, url=url, jira_issue_key=jira_issue_key,
-        attachment_id=attachment_id, backend_override="tier3-gemini",
+        cfg, cache, file_path=file_path, url=url, backend_override="tier3-gemini",
     )
     out.extend(gemini.to_mcp_content(include_frames=True))
     return out

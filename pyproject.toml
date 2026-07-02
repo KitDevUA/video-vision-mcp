@@ -4,8 +4,8 @@ build-backend = "hatchling.build"
 
 [project]
 name = "video-vision-mcp"
-version = "0.1.0"
-description = "MCP server that turns any video (file, URL, or Jira attachment) into frames + transcript for Claude."
+version = "0.2.0"
+description = "MCP server that turns any video (local file or URL) into frames + transcript for Claude."
 readme = "README.md"
 requires-python = ">=3.10"
 license = "MIT"

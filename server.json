@@ -1,8 +1,8 @@
 {
   "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
   "name": "io.github.KitDevUA/video-vision-mcp",
-  "description": "Analyze any video (file, URL, or Jira attachment) into frames + transcript for Claude Code",
-  "version": "0.1.0",
+  "description": "Analyze any video (local file or URL) into frames + transcript for Claude Code",
+  "version": "0.2.0",
   "repository": {
     "url": "https://github.com/KitDevUA/video-vision-mcp",
     "source": "github"
@@ -12,7 +12,7 @@
       "registryType": "pypi",
       "registryBaseUrl": "https://pypi.org",
       "identifier": "video-vision-mcp",
-      "version": "0.1.0",
+      "version": "0.2.0",
       "runtimeHint": "uvx",
       "transport": {
         "type": "stdio"
@@ -20,7 +20,7 @@
       "environmentVariables": [
         {
           "name": "VIDEO_MCP_ENV",
-          "description": "Optional path to a .env file with config (Jira creds, API keys).",
+          "description": "Optional path to a .env file with config (API keys, tuning).",
           "isRequired": false,
           "isSecret": false
         },
@@ -39,24 +39,6 @@
         {
           "name": "GROQ_API_KEY",
           "description": "Enables tier-2 Groq whisper-large-v3 transcription.",
-          "isRequired": false,
-          "isSecret": true
-        },
-        {
-          "name": "JIRA_URL",
-          "description": "Jira base URL — only for the jira_issue_key input path.",
-          "isRequired": false,
-          "isSecret": false
-        },
-        {
-          "name": "JIRA_USERNAME",
-          "description": "Jira account email — only for the jira_issue_key input path.",
-          "isRequired": false,
-          "isSecret": false
-        },
-        {
-          "name": "JIRA_API_TOKEN",
-          "description": "Jira API token — only for the jira_issue_key input path.",
           "isRequired": false,
           "isSecret": true
         }

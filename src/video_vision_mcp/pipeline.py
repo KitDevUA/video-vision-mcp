@@ -45,12 +45,10 @@ def analyze(
     *,
     file_path: str | None = None,
     url: str | None = None,
-    jira_issue_key: str | None = None,
-    attachment_id: str | None = None,
     backend_override: str | None = None,
     force_refresh: bool = False,
 ) -> AnalysisResult:
-    resolved = resolver.resolve(cfg, file_path, url, jira_issue_key, attachment_id)
+    resolved = resolver.resolve(cfg, file_path, url)
     backend = cfg.select_backend(backend_override)
     digest = file_hash(resolved.path)
 
@@ -74,15 +72,13 @@ def frames_at(
     timestamps: list[float],
     file_path: str | None = None,
     url: str | None = None,
-    jira_issue_key: str | None = None,
-    attachment_id: str | None = None,
 ) -> tuple[ResolvedSource, list[Frame], str | None]:
     """Extract frames at specific timestamps.
 
     Tier 1/2: real ffmpeg frames. Tier 3 (no local ffmpeg path): returns a Gemini
     description of those moments instead, as the third tuple element.
     """
-    resolved = resolver.resolve(cfg, file_path, url, jira_issue_key, attachment_id)
+    resolved = resolver.resolve(cfg, file_path, url)
     backend = cfg.select_backend()
     if backend == "tier3-gemini":
         from google import genai

@@ -8,18 +8,20 @@
 <!-- mcp-name: io.github.KitDevUA/video-vision-mcp -->
 
 An MCP server that gives Claude Code the ability to **analyze any video** —
-a local file, a URL, or a Jira ticket attachment — through one set of tools.
+a local file or a URL — through one set of tools.
 
 Claude can't watch video natively (only text + the first frame of an image).
 This server converts a video into **sampled frame images + an audio transcript**,
-or — when a Gemini key is present — a **native Gemini analysis** of the whole
-video. It works alongside [`mcp-atlassian`](https://github.com/sooperset/mcp-atlassian)
-and shares its `.env`.
+or — when a Gemini key is present — a **native Gemini analysis** of the whole video.
 
-> Scenario: open a Jira ticket with a video bug report → one command
-> (`analyze_video jira_issue_key=DEV-123`) → you see the frames and the
-> transcript (or Gemini's analysis if a key is configured), without juggling
-> two MCP servers.
+It is **standalone**: give it a ready video (a local path or a direct URL) and it
+does the rest. It does not connect to Jira/Slack/etc. If a video lives behind an
+integration, fetch it with that integration first (download to a file or get a
+direct URL), then hand the `file_path` or `url` to this server.
+
+> Scenario: a Jira bug ticket has only a screen-recording, no text. Your Jira MCP
+> downloads the attachment to a temp file → `analyze_video file_path=/tmp/bug.mp4`
+> → you see the frames + transcript (or Gemini's analysis) and can reason about the bug.
 
 ## Three backend tiers (auto-selected)
 
@@ -90,13 +92,12 @@ cp env.example .env
 # edit .env — nothing is required for tier 1
 ```
 
-See `env.example` for every variable. The `.env` format matches `mcp-atlassian`,
-so Jira creds (`JIRA_URL` / `JIRA_USERNAME` / `JIRA_API_TOKEN`) can be shared.
+See `env.example` for every variable — all optional (API keys and tuning). Tier 1
+needs none.
 
 ## Register in Claude Code
 
-Add to your project `.mcp.json` (or global config), next to `mcp-atlassian` — see
-`.mcp.json.example`:
+Add to your project `.mcp.json` (or global config) — see `.mcp.json.example`:
 
 ```json
 {
@@ -112,7 +113,7 @@ Add to your project `.mcp.json` (or global config), next to `mcp-atlassian` — 
 
 `uvx` downloads and runs the published package automatically — no manual install
 step. `VIDEO_MCP_ENV` is optional (tier 1 needs no keys); point it at your `.env`
-if you use Jira or cloud backends. For local development against a checkout, use
+if you use the cloud backends. For local development against a checkout, use
 `"args": ["--from", "/abs/path/to/video-vision-mcp", "video-vision-mcp"]` instead.
 Restart Claude Code; the `video-vision` tools then appear.
 
@@ -120,12 +121,18 @@ Restart Claude Code; the `video-vision` tools then appear.
 
 Results are cached at `~/.cache/video-vision-mcp/` keyed by **(file hash,
 backend)** — re-analyzing the same video is instant, and switching backends
-keeps each result separately. Downloaded URLs/Jira files and whisper models live
-under the same dir. Override with `VIDEO_MCP_CACHE_DIR`.
+keeps each result separately. Downloaded URLs and whisper models live under the
+same dir. Override with `VIDEO_MCP_CACHE_DIR`.
 
-## How it fits with mcp-atlassian
+## Using it with an integration (e.g. Jira, Slack)
 
-`mcp-atlassian` can download a Jira attachment but can't analyze it. This server
-takes over from there: pass `jira_issue_key` and it fetches the attachment over
-Jira REST itself (same creds), so you stay in one tool call. If the Jira token is
-missing/invalid you get a clear error pointing at `.env`, not a silent failure.
+This server is deliberately standalone — it never talks to Jira, Slack, or any
+other service. When a video lives behind an integration, let that integration's
+MCP fetch it, then pass the result here:
+
+1. The integration MCP downloads the attachment to a local file (or gives a
+   direct, publicly reachable URL — an authenticated API URL won't work with `url`).
+2. Call `analyze_video file_path=<downloaded file>` (or `url=<direct link>`).
+
+This keeps auth and service-specific logic where it belongs, and lets one video
+tool serve every source.

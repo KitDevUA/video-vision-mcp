@@ -1,4 +1,4 @@
-"""Configuration loaded from a `.env` file (format-compatible with mcp-atlassian).
+"""Configuration loaded from a `.env` file.
 
 Backend selection is decided here, once, at startup based on which API keys are
 present. See `select_backend` for the precedence rules.
@@ -16,8 +16,7 @@ from dotenv import find_dotenv, load_dotenv
 def _load_env() -> None:
     """Load .env from VIDEO_MCP_ENV (if set), then the nearest .env up the tree.
 
-    `override=False` means real environment variables always win over the file,
-    which matches how mcp-atlassian is typically launched by Claude Code.
+    `override=False` means real environment variables always win over the file.
     """
     explicit = os.environ.get("VIDEO_MCP_ENV")
     if explicit and Path(explicit).expanduser().is_file():
@@ -42,11 +41,6 @@ def _int(value: str | None, default: int) -> int:
 
 @dataclass(frozen=True)
 class Config:
-    # Jira (shared with mcp-atlassian) — used only for the jira_issue_key input path.
-    jira_url: str | None
-    jira_username: str | None
-    jira_api_token: str | None
-
     # Cloud backend keys (all optional).
     openai_api_key: str | None
     groq_api_key: str | None
@@ -72,9 +66,6 @@ class Config:
         _load_env()
         cache_dir = os.environ.get("VIDEO_MCP_CACHE_DIR")
         return cls(
-            jira_url=os.environ.get("JIRA_URL"),
-            jira_username=os.environ.get("JIRA_USERNAME"),
-            jira_api_token=os.environ.get("JIRA_API_TOKEN"),
             openai_api_key=os.environ.get("OPENAI_API_KEY"),
             groq_api_key=os.environ.get("GROQ_API_KEY"),
             # Accept either name; GEMINI_API_KEY wins.

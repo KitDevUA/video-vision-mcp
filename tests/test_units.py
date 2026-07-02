@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-import pytest
-
 from video_vision_mcp.backends.base import (
     AnalysisResult,
     Frame,
@@ -13,11 +11,6 @@ from video_vision_mcp.backends.base import (
 from video_vision_mcp.backends.tier1_local import _is_silence
 from video_vision_mcp.cache import Cache, file_hash
 from video_vision_mcp.config import Config
-from video_vision_mcp.sources.jira_loader import (
-    JiraConfigError,
-    _client,
-    _is_video_attachment,
-)
 from video_vision_mcp.sources.url_loader import _needs_yt_dlp
 from video_vision_mcp import privacy
 
@@ -111,21 +104,6 @@ def test_gemini_alias_and_disable(monkeypatch, tmp_path):
     assert cfg.gemini_api_key == "x"
     assert cfg.select_backend() == "tier3-gemini"
     assert "tier3-gemini" in cfg.available_backends()
-
-
-def test_is_video_attachment():
-    assert _is_video_attachment({"mimeType": "video/mp4", "filename": "a.mp4"})
-    assert _is_video_attachment({"mimeType": "application/octet-stream", "filename": "clip.MOV"})
-    assert not _is_video_attachment({"mimeType": "image/png", "filename": "a.png"})
-
-
-def test_jira_requires_creds(monkeypatch, tmp_path):
-    monkeypatch.chdir(tmp_path)
-    for var in ("JIRA_URL", "JIRA_USERNAME", "JIRA_API_TOKEN", "VIDEO_MCP_ENV"):
-        monkeypatch.delenv(var, raising=False)
-    cfg = Config.load()
-    with pytest.raises(JiraConfigError):
-        _client(cfg)
 
 
 def test_needs_yt_dlp():
