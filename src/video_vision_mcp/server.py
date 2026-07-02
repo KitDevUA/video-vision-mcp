@@ -131,39 +131,6 @@ def list_recent_analyses() -> str:
     return "\n".join(lines)
 
 
-@mcp.tool()
-def compare_backends(
-    file_path: str | None = None,
-    url: str | None = None,
-    frame_interval: float | None = None,
-) -> list[TextContent | ImageContent]:
-    """Run the same video through tier 1 (local) and tier 3 (Gemini) side by side.
-
-    frame_interval (seconds between frames) applies to the tier-1 half. Requires a
-    Gemini key for the tier-3 half; otherwise reports that tier 3 is unavailable
-    and returns only the local result.
-    """
-    available = cfg.available_backends()
-    out: list[TextContent | ImageContent] = [
-        TextContent(type="text", text="# Backend comparison\n\n---\n## Tier 1 — local (ffmpeg + whisper.cpp)")
-    ]
-    local = pipeline.analyze(
-        cfg, cache, file_path=file_path, url=url,
-        backend_override="tier1-local", frame_interval=frame_interval,
-    )
-    out.extend(local.to_mcp_content(include_frames=True))
-
-    out.append(TextContent(type="text", text="\n---\n## Tier 3 — native Gemini"))
-    if "tier3-gemini" not in available:
-        out.append(TextContent(type="text", text="_Gemini backend unavailable (no GEMINI_API_KEY). Skipped._"))
-        return out
-    gemini = pipeline.analyze(
-        cfg, cache, file_path=file_path, url=url, backend_override="tier3-gemini",
-    )
-    out.extend(gemini.to_mcp_content(include_frames=True))
-    return out
-
-
 def main() -> None:
     """Console-script entry point: run the MCP server over stdio."""
     mcp.run()

@@ -44,7 +44,6 @@ the session the first time video content is sent to a third party.
 - `get_video_transcript_only` — transcript text only.
 - `extract_frames_at` — frames at specific timestamps (`"00:42"`, `"1:05"`, `12.5`).
 - `list_recent_analyses` — cached analyses + backend used.
-- `compare_backends` — same video via tier 1 and tier 3 side by side.
 
 ## Install
 

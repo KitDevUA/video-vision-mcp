@@ -91,14 +91,11 @@ class Config:
             cache_ttl_hours=_float(os.environ.get("VIDEO_MCP_CACHE_TTL_HOURS"), 24.0),
         )
 
-    def select_backend(self, override: str | None = None) -> str:
+    def select_backend(self) -> str:
         """Return the backend id to use. Tier 3 (Gemini) wins when usable.
 
         Precedence: Gemini (unless disabled) > OpenAI > Groq > local whisper.cpp.
-        `override` lets a single tool call force a specific backend.
         """
-        if override:
-            return override
         if self.gemini_api_key and not self.disable_gemini:
             return "tier3-gemini"
         if self.openai_api_key:

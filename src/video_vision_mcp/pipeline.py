@@ -45,12 +45,11 @@ def analyze(
     *,
     file_path: str | None = None,
     url: str | None = None,
-    backend_override: str | None = None,
     frame_interval: float | None = None,
     force_refresh: bool = False,
 ) -> AnalysisResult:
     resolved = resolver.resolve(cfg, file_path, url)
-    backend = cfg.select_backend(backend_override)
+    backend = cfg.select_backend()
     digest = file_hash(resolved.path)
 
     # Frame interval changes the sampled frames, so it must be part of the cache

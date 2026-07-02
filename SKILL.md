@@ -30,7 +30,6 @@ Offer `analyze_video` WITHOUT waiting to be explicitly asked, whenever:
 | `get_video_transcript_only` | Just the spoken text (fast, no images). |
 | `extract_frames_at` | Frames at specific timestamps ("00:42", "1:05"). |
 | `list_recent_analyses` | What's already cached, and with which backend. |
-| `compare_backends` | Same video via local + Gemini side by side. |
 
 ## Inputs (pick exactly one)
 
